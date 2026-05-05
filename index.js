@@ -26,26 +26,31 @@ const INTRO_CHANNEL_ID = "1496299134574133321";
 // 🔒 STRICT TEMPLATE MATCH (FIXED)
 // =========================
 function isValidIntro(content) {
-  const clean = content.replace(/\r/g, "").trim();
+  // Normalize line breaks, trim spaces, remove empty lines
+  const clean = content
+    .replace(/\r/g, "")
+    .split("\n")
+    .map(l => l.trim())
+    .filter(l => l.length > 0)
+    .join("\n");
 
-  const template = `𓎢𓎠𓎟𓎟𓎠𓎟𓎠𓎟𓎠𓎠𓎡
-　
-**୨୧　：about me　♬**
-　
-♡　―　age : 
-✿　―　name: 
-♡　―　pronouns: 
-♡　―　country: 
-　
-𓎢𓎠𓎟𓎟𓎠𓎟𓎠𓎟𓎠𓎠𓎡
-　
-✿　―　likes: 
-♡　―　dislike:
-✿　―　hobbies:
-♡　―　languages:
-✿　―　nationality:
-♡　―　extra info :
-𓎢𓎠𓎟𓎟𓎠𓎟𓎠𓎟𓎠𓎠𓎡`;
+  // Normalized template
+  const template = [
+    "𓎢𓎠𓎟𓎟𓎠𓎟𓎠𓎟𓎠𓎠𓎡",
+    "**୨୧　：about me　♬**",
+    "♡　―　age :",
+    "✿　―　name:",
+    "♡　―　pronouns:",
+    "♡　―　country:",
+    "𓎢𓎠𓎟𓎟𓎠𓎟𓎠𓎟𓎠𓎠𓎡",
+    "✿　―　likes:",
+    "♡　―　dislike:",
+    "✿　―　hobbies:",
+    "♡　―　languages:",
+    "✿　―　nationality:",
+    "♡　―　extra info :",
+    "𓎢𓎠𓎟𓎟𓎠𓎟𓎠𓎟𓎠𓎠𓎡"
+  ].join("\n");
 
   return clean === template;
 }
@@ -65,7 +70,6 @@ client.on('messageCreate', async (message) => {
   // 🖼️ IMAGE FILTER
   // =========================
   if (IMAGE_ONLY_CHANNELS.includes(message.channel.id)) {
-
     const hasImageAttachment = message.attachments.some(att =>
       att.contentType?.startsWith('image/')
     );
@@ -77,19 +81,16 @@ client.on('messageCreate', async (message) => {
     if (!hasImage) {
       try {
         await message.delete();
-
         const warn = await message.channel.send(
           `⚠️ ${message.author}, only images are allowed in this channel.`
         );
-
         setTimeout(() => warn.delete().catch(() => {}), 3000);
-
       } catch (err) {
         console.error('Image delete error:', err);
       }
     }
 
-    return;
+    return; // stop here so intro check doesn't run
   }
 
   // =========================
@@ -99,11 +100,9 @@ client.on('messageCreate', async (message) => {
     if (!isValidIntro(message.content)) {
       try {
         await message.delete();
-
         await message.author.send(
           "Your intro was removed because it doesn't follow the required template."
         );
-
       } catch (err) {
         console.error('Intro delete error:', err);
       }
@@ -112,7 +111,7 @@ client.on('messageCreate', async (message) => {
 });
 
 // =========================
-// 🔌 READY EVENT (FIXED)
+// 🔌 READY EVENT
 // =========================
 client.once('ready', () => {
   console.log(`Logged in as ${client.user.tag}`);
