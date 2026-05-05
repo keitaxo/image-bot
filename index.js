@@ -9,45 +9,112 @@ const client = new Client({
   ]
 });
 
-// Channels where ONLY images are allowed
+// =========================
+// 🖼️ IMAGE-ONLY CHANNELS
+// =========================
 const IMAGE_ONLY_CHANNELS = [
   "1498949958701940736",
   "1496264468273954976"
 ];
 
+// =========================
+// 📋 INTRO CHANNEL
+// =========================
+const INTRO_CHANNEL_ID = "1496299134574133321";
+
+// =========================
+// 🔒 STRICT TEMPLATE MATCH (FIXED)
+// =========================
+function isValidIntro(content) {
+  const clean = content.replace(/\r/g, "").trim();
+
+  const template = `𓎢𓎠𓎟𓎟𓎠𓎟𓎠𓎟𓎠𓎠𓎡
+　
+**୨୧　：about me　♬**
+　
+♡　―　age : 
+✿　―　name: 
+♡　―　pronouns: 
+♡　―　country: 
+　
+𓎢𓎠𓎟𓎟𓎠𓎟𓎠𓎟𓎠𓎠𓎡
+　
+✿　―　likes: 
+♡　―　dislike:
+✿　―　hobbies:
+♡　―　languages:
+✿　―　nationality:
+♡　―　extra info :
+𓎢𓎠𓎟𓎟𓎠𓎟𓎠𓎟𓎠𓎠𓎡`;
+
+  return clean === template;
+}
+
+// =========================
+// 🎯 MAIN EVENT
+// =========================
 client.on('messageCreate', async (message) => {
   if (message.author.bot) return;
 
-  // Only apply in selected channels
-  if (!IMAGE_ONLY_CHANNELS.includes(message.channel.id)) return;
+  // 👑 OWNER BYPASS ONLY
+  if (message.guild && message.author.id === message.guild.ownerId) {
+    return;
+  }
 
-  // Check image attachments
-  const hasImageAttachment = message.attachments.some(att =>
-    att.contentType?.startsWith('image/')
-  );
+  // =========================
+  // 🖼️ IMAGE FILTER
+  // =========================
+  if (IMAGE_ONLY_CHANNELS.includes(message.channel.id)) {
 
-  // Check image links
-  const hasImageLink = /(https?:\/\/.*\.(png|jpg|jpeg|gif|webp))/i.test(message.content);
+    const hasImageAttachment = message.attachments.some(att =>
+      att.contentType?.startsWith('image/')
+    );
 
-  const hasImage = hasImageAttachment || hasImageLink;
+    const hasImageLink = /(https?:\/\/.*\.(png|jpg|jpeg|gif|webp))/i.test(message.content);
 
-  if (!hasImage) {
-    try {
-      await message.delete();
+    const hasImage = hasImageAttachment || hasImageLink;
 
-      const warn = await message.channel.send(
-        `⚠️ ${message.author}, only images are allowed in this channel.`
-      );
+    if (!hasImage) {
+      try {
+        await message.delete();
 
-      setTimeout(() => warn.delete().catch(() => {}), 3000);
+        const warn = await message.channel.send(
+          `⚠️ ${message.author}, only images are allowed in this channel.`
+        );
 
-    } catch (err) {
-      console.error('Delete error:', err);
+        setTimeout(() => warn.delete().catch(() => {}), 3000);
+
+      } catch (err) {
+        console.error('Image delete error:', err);
+      }
+    }
+
+    return;
+  }
+
+  // =========================
+  // 📋 INTRO FILTER
+  // =========================
+  if (message.channel.id === INTRO_CHANNEL_ID) {
+    if (!isValidIntro(message.content)) {
+      try {
+        await message.delete();
+
+        await message.author.send(
+          "Your intro was removed because it doesn't follow the required template."
+        );
+
+      } catch (err) {
+        console.error('Intro delete error:', err);
+      }
     }
   }
 });
 
-client.once('clientReady', () => {
+// =========================
+// 🔌 READY EVENT (FIXED)
+// =========================
+client.once('ready', () => {
   console.log(`Logged in as ${client.user.tag}`);
 });
 
