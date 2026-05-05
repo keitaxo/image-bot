@@ -23,36 +23,43 @@ const IMAGE_ONLY_CHANNELS = [
 const INTRO_CHANNEL_ID = "1496299134574133321";
 
 // =========================
-// 🔒 STRICT TEMPLATE MATCH (FIXED)
+// 🔒 TEMPLATE VALIDATION
 // =========================
 function isValidIntro(content) {
-  // Normalize line breaks, trim spaces, remove empty lines
-  const clean = content
+  // Normalize lines
+  const lines = content
     .replace(/\r/g, "")
     .split("\n")
     .map(l => l.trim())
-    .filter(l => l.length > 0)
-    .join("\n");
+    .filter(l => l.length > 0);
 
-  // Normalized template
-  const template = [
-    "𓎢𓎠𓎟𓎟𓎠𓎟𓎠𓎟𓎠𓎠𓎡",
-    "**୨୧　：about me　♬**",
-    "♡　―　age :",
-    "✿　―　name:",
-    "♡　―　pronouns:",
-    "♡　―　country:",
-    "𓎢𓎠𓎟𓎟𓎠𓎟𓎠𓎟𓎠𓎠𓎡",
-    "✿　―　likes:",
-    "♡　―　dislike:",
-    "✿　―　hobbies:",
-    "♡　―　languages:",
-    "✿　―　nationality:",
-    "♡　―　extra info :",
-    "𓎢𓎠𓎟𓎟𓎠𓎟𓎠𓎟𓎠𓎠𓎡"
-  ].join("\n");
+  // Fields in correct order
+  const requiredFields = [
+    "age",
+    "name",
+    "pronouns",
+    "country",
+    "likes",
+    "dislike",
+    "hobbies",
+    "languages",
+    "nationality",
+    "extra info"
+  ];
 
-  return clean === template;
+  let fieldIndex = 0;
+
+  for (const line of lines) {
+    if (fieldIndex >= requiredFields.length) break;
+
+    // Check if this line contains the next required field
+    if (line.toLowerCase().includes(requiredFields[fieldIndex])) {
+      fieldIndex++;
+    }
+  }
+
+  // Only valid if all fields appear in order
+  return fieldIndex === requiredFields.length;
 }
 
 // =========================
@@ -61,13 +68,11 @@ function isValidIntro(content) {
 client.on('messageCreate', async (message) => {
   if (message.author.bot) return;
 
-  // 👑 OWNER BYPASS ONLY
-  if (message.guild && message.author.id === message.guild.ownerId) {
-    return;
-  }
+  // 👑 OWNER BYPASS
+  if (message.guild && message.author.id === message.guild.ownerId) return;
 
   // =========================
-  // 🖼️ IMAGE FILTER
+  // 🖼 IMAGE FILTER
   // =========================
   if (IMAGE_ONLY_CHANNELS.includes(message.channel.id)) {
     const hasImageAttachment = message.attachments.some(att =>
@@ -89,8 +94,7 @@ client.on('messageCreate', async (message) => {
         console.error('Image delete error:', err);
       }
     }
-
-    return; // stop here so intro check doesn't run
+    return;
   }
 
   // =========================
