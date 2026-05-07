@@ -239,23 +239,22 @@ client.on('messageCreate', async (message) => {
     // 📋 SHOW CONFIG
     // =========================
 
- if (cmd === "!config") {
+if (cmd === "!config") {
 
   return message.reply(
 `Current Config
 
 Allowed Link Channels:
-${config.allowedLinkChannels.map(id => `<#${id}>`).join("\n") || "None"}
+${config.allowedLinkChannels.length ? config.allowedLinkChannels.map(id => `<#${id}>`).join("\n") : "None"}
 
 Allowed Link Roles:
-${config.allowedLinkRoles.map(id => `<@&${id}>`).join("\n") || "None"}
+${config.allowedLinkRoles.length ? config.allowedLinkRoles.map(id => `<@&${id}>`).join("\n") : "None"}
 
 Image Only Channels:
-${config.imageOnlyChannels.map(id => `<#${id}>`).join("\n") || "None"}`
+${config.imageOnlyChannels.length ? config.imageOnlyChannels.map(id => `<#${id}>`).join("\n") : "None"}`
   );
 
 }
-  
 
   // =========================
   // 🔗 LINK FILTER
