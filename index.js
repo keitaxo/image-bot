@@ -143,9 +143,23 @@ ${config.imageOnlyChannels.length ? config.imageOnlyChannels.map(id => `<#${id}>
   // =========================
   // GIF BYPASS
   // =========================
-  const hasGifRole = message.member.roles.cache.some(role => GIF_ROLE_IDS.includes(role.id));
-  const isGifLink = /(https?:\/\/.*\.gif)/i.test(message.content);
-  const gifAllowed = hasGifRole && isGifLink;
+  const hasGifRole = message.member.roles.cache.some(role =>
+    GIF_ROLE_IDS.includes(role.id)
+  );
+
+  // Detect GIF attachments
+  const hasGifAttachment = message.attachments.some(att =>
+    att.contentType === "image/gif" ||
+    att.name?.toLowerCase().endsWith(".gif")
+  );
+
+  // Detect GIF links/providers
+  const hasGifLink =
+    /(https?:\/\/.*\.gif)/i.test(message.content) ||
+    /(tenor\.com|giphy\.com|media\.discordapp\.net|cdn\.discordapp\.com)/i.test(message.content);
+
+  // Final bypass
+  const gifAllowed = hasGifRole && (hasGifAttachment || hasGifLink);
 
   // =========================
   // LINK FILTER
