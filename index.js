@@ -141,7 +141,7 @@ ${config.imageOnlyChannels.length ? config.imageOnlyChannels.map(id => `<#${id}>
   }
 
   // =========================
-  // GIF BYPASS CALCULATION
+  // GIF BYPASS
   // =========================
   const hasGifRole = message.member.roles.cache.some(role => GIF_ROLE_IDS.includes(role.id));
   const isGifLink = /(https?:\/\/.*\.gif)/i.test(message.content);
@@ -152,7 +152,7 @@ ${config.imageOnlyChannels.length ? config.imageOnlyChannels.map(id => `<#${id}>
   // =========================
   if (containsLink(message.content)) {
 
-    if (gifAllowed) return; // GIF-role users can post GIFs anywhere
+    if (gifAllowed) return; // GIF-role users can post .gif links anywhere
 
     // Allowed channels
     if (config.allowedLinkChannels.includes(message.channel.id)) return;
@@ -184,6 +184,7 @@ ${config.imageOnlyChannels.length ? config.imageOnlyChannels.map(id => `<#${id}>
   if (config.imageOnlyChannels.includes(message.channel.id)) {
     const hasImageAttachment = message.attachments.some(att => att.contentType?.startsWith('image/'));
     const hasImageLink = /(https?:\/\/.*\.(png|jpg|jpeg|webp))/i.test(message.content);
+
     const hasImage = hasImageAttachment || hasImageLink || gifAllowed;
 
     if (!hasImage) {
