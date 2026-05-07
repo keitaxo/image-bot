@@ -141,21 +141,30 @@ ${config.imageOnlyChannels.length ? config.imageOnlyChannels.map(id => `<#${id}>
   }
 
   // =========================
-  // LINK FILTER WITH GIF ROLE
+  // GIF PERMISSION CHECK
+  // =========================
+  const hasGifRole = message.member.roles.cache.some(role =>
+    GIF_ROLE_IDS.includes(role.id)
+  );
+  const isGifLink = /(https?:\/\/.*\.gif)/i.test(message.content);
+  const gifAllowed = hasGifRole && isGifLink;
+
+  // =========================
+  // LINK FILTER
   // =========================
   if (containsLink(message.content)) {
+
+    // GIF bypass anywhere
+    if (gifAllowed) return;
 
     // Allowed channels
     if (config.allowedLinkChannels.includes(message.channel.id)) return;
 
-    // Allowed roles bypass
-    const hasAllowedRole = message.member.roles.cache.some(role => config.allowedLinkRoles.includes(role.id));
+    // Allowed roles
+    const hasAllowedRole = message.member.roles.cache.some(role =>
+      config.allowedLinkRoles.includes(role.id)
+    );
     if (hasAllowedRole) return;
-
-    // GIF role bypass
-    const hasGifRole = message.member.roles.cache.some(role => GIF_ROLE_IDS.includes(role.id));
-    const isGifLink = /(https?:\/\/.*\.gif)/i.test(message.content);
-    if (hasGifRole && isGifLink) return; // GIF links allowed
 
     // Domain whitelist
     const urls = message.content.match(/(https?:\/\/[^\s]+)/gi) || [];
@@ -165,13 +174,11 @@ ${config.imageOnlyChannels.length ? config.imageOnlyChannels.map(id => `<#${id}>
     });
 
     if (!allWhitelisted) {
-      try {
-        await message.delete();
-        const warn = await message.channel.send(
-          `${message.author}, links are not allowed here.`
-        );
-        setTimeout(() => warn.delete().catch(() => {}), 3000);
-      } catch (err) { console.error(err); }
+      await message.delete();
+      const warn = await message.channel.send(
+        `${message.author}, links are not allowed here.`
+      );
+      setTimeout(() => warn.delete().catch(() => {}), 3000);
       return;
     }
   }
@@ -184,23 +191,16 @@ ${config.imageOnlyChannels.length ? config.imageOnlyChannels.map(id => `<#${id}>
     const hasImageAttachment = message.attachments.some(att => att.contentType?.startsWith('image/'));
     const hasImageLink = /(https?:\/\/.*\.(png|jpg|jpeg|webp))/i.test(message.content);
 
-    // GIF links allowed if user has GIF role
-    const hasGifRole = message.member.roles.cache.some(role => GIF_ROLE_IDS.includes(role.id));
-    const hasGifLink = /(https?:\/\/.*\.gif)/i.test(message.content);
-    const gifAllowed = hasGifRole && hasGifLink;
-
     const hasImage = hasImageAttachment || hasImageLink || gifAllowed;
 
     if (!hasImage) {
-      try {
-        await message.delete();
-        const warn = await message.channel.send(
-          `${message.author}, only images are allowed here.`
-        );
-        setTimeout(() => warn.delete().catch(() => {}), 3000);
-      } catch (err) { console.error(err); }
+      await message.delete();
+      const warn = await message.channel.send(
+        `${message.author}, only images are allowed here.`
+      );
+      setTimeout(() => warn.delete().catch(() => {}), 3000);
+      return;
     }
-    return;
   }
 
   // =========================
@@ -208,12 +208,10 @@ ${config.imageOnlyChannels.length ? config.imageOnlyChannels.map(id => `<#${id}>
   // =========================
   if (message.channel.id === config.introChannelId) {
     if (!isValidIntro(message.content)) {
-      try {
-        await message.delete();
-        await message.author.send(
-          "Your intro was removed because it doesn't follow the template."
-        );
-      } catch (err) { console.error(err); }
+      await message.delete();
+      try { await message.author.send(
+        "Your intro was removed because it doesn't follow the template."
+      ); } catch {}
     }
   }
 });
