@@ -107,7 +107,7 @@ client.on('messageCreate', async (message) => {
   if (message.author.id === message.guild.ownerId) return;
 
   // =========================
-  // ⚙️ COMMANDS (FIXED)
+  // ⚙️ COMMANDS
   // =========================
 
   if (message.content.startsWith("!")) {
@@ -199,21 +199,32 @@ ${config.imageOnlyChannels.length ? config.imageOnlyChannels.map(id => `<#${id}>
   }
 
   // =========================
-  // 🔗 LINK FILTER
+  // 🔗 LINK FILTER WITH GIF PERMISSION
   // =========================
-
   if (containsLink(message.content)) {
 
+    // Allowed channels
     if (config.allowedLinkChannels.includes(message.channel.id)) return;
 
+    // Allowed roles bypass
     const hasAllowedRole = message.member.roles.cache.some(role =>
       config.allowedLinkRoles.includes(role.id)
     );
-
     if (hasAllowedRole) return;
 
-    const urls = message.content.match(/(https?:\/\/[^\s]+)/gi) || [];
+    // GIF permission role
+    const GIF_ROLE_IDS = ["1495890571397435442"]; // GIF permission role
+    const hasGifRole = message.member.roles.cache.some(role =>
+      GIF_ROLE_IDS.includes(role.id)
+    );
 
+    const isGifLink = /(https?:\/\/.*\.gif)/i.test(message.content);
+
+    // Allow GIFs only for users with GIF role
+    if (hasGifRole && isGifLink) return;
+
+    // Domain whitelist
+    const urls = message.content.match(/(https?:\/\/[^\s]+)/gi) || [];
     const allWhitelisted = urls.every(url => {
       const domain = getDomain(url);
       return config.whitelistedDomains.some(d => domain?.includes(d));
@@ -223,20 +234,18 @@ ${config.imageOnlyChannels.length ? config.imageOnlyChannels.map(id => `<#${id}>
       try {
         await message.delete();
         const warn = await message.channel.send(
-          `⚠️ ${message.author}, links are not allowed here.`
+          `${message.author}, links are not allowed here.`
         );
-
         setTimeout(() => warn.delete().catch(() => {}), 3000);
       } catch (err) {
         console.error(err);
       }
-
       return;
     }
   }
 
   // =========================
-  // 🖼 IMAGE FILTER
+  // IMAGE FILTER
   // =========================
 
   if (config.imageOnlyChannels.includes(message.channel.id)) {
@@ -255,7 +264,7 @@ ${config.imageOnlyChannels.length ? config.imageOnlyChannels.map(id => `<#${id}>
         await message.delete();
 
         const warn = await message.channel.send(
-          `⚠️ ${message.author}, only images are allowed here.`
+          `${message.author}, only images are allowed here.`
         );
 
         setTimeout(() => warn.delete().catch(() => {}), 3000);
@@ -269,13 +278,14 @@ ${config.imageOnlyChannels.length ? config.imageOnlyChannels.map(id => `<#${id}>
   }
 
   // =========================
-  // 📋 INTRO FILTER
+  // INTRO FILTER
   // =========================
 
   if (message.channel.id === config.introChannelId) {
 
     if (!isValidIntro(message.content)) {
       try {
+
         await message.delete();
 
         await message.author.send(
@@ -289,7 +299,7 @@ ${config.imageOnlyChannels.length ? config.imageOnlyChannels.map(id => `<#${id}>
 });
 
 // =========================
-// 🔌 READY
+// READY
 // =========================
 
 client.once('clientReady', () => {
@@ -297,7 +307,7 @@ client.once('clientReady', () => {
 });
 
 // =========================
-// 🚀 LOGIN
+// LOGIN
 // =========================
 
 client.login(process.env.TOKEN);
