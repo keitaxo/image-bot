@@ -1,10 +1,6 @@
 require('dotenv').config();
 
-const {
-  Client,
-  GatewayIntentBits,
-  PermissionsBitField
-} = require('discord.js');
+const { Client, GatewayIntentBits, PermissionsBitField } = require('discord.js');
 
 const client = new Client({
   intents: [
@@ -48,32 +44,13 @@ const GIF_ROLE_IDS = ["1495890571397435442"];
 // INTRO TEMPLATE
 // =========================
 function isValidIntro(content) {
-  const lines = content
-    .replace(/\r/g, "")
-    .split("\n")
-    .map(l => l.trim())
-    .filter(l => l.length > 0);
-
-  const requiredFields = [
-    "age",
-    "name",
-    "pronouns",
-    "country",
-    "likes",
-    "dislike",
-    "hobbies",
-    "languages",
-    "nationality",
-    "extra info"
-  ];
-
+  const lines = content.replace(/\r/g, "").split("\n").map(l => l.trim()).filter(l => l.length > 0);
+  const requiredFields = ["age","name","pronouns","country","likes","dislike","hobbies","languages","nationality","extra info"];
   let fieldIndex = 0;
-
   for (const line of lines) {
     if (fieldIndex >= requiredFields.length) break;
     if (line.toLowerCase().includes(requiredFields[fieldIndex])) fieldIndex++;
   }
-
   return fieldIndex === requiredFields.length;
 }
 
@@ -85,11 +62,7 @@ function containsLink(content) {
 }
 
 function getDomain(url) {
-  try {
-    return new URL(url).hostname.replace("www.", "");
-  } catch {
-    return null;
-  }
+  try { return new URL(url).hostname.replace("www.", ""); } catch { return null; }
 }
 
 // =========================
@@ -176,17 +149,13 @@ ${config.imageOnlyChannels.length ? config.imageOnlyChannels.map(id => `<#${id}>
     if (config.allowedLinkChannels.includes(message.channel.id)) return;
 
     // Allowed roles bypass
-    const hasAllowedRole = message.member.roles.cache.some(role =>
-      config.allowedLinkRoles.includes(role.id)
-    );
+    const hasAllowedRole = message.member.roles.cache.some(role => config.allowedLinkRoles.includes(role.id));
     if (hasAllowedRole) return;
 
     // GIF role bypass
-    const hasGifRole = message.member.roles.cache.some(role =>
-      GIF_ROLE_IDS.includes(role.id)
-    );
+    const hasGifRole = message.member.roles.cache.some(role => GIF_ROLE_IDS.includes(role.id));
     const isGifLink = /(https?:\/\/.*\.gif)/i.test(message.content);
-    if (hasGifRole && isGifLink) return;
+    if (hasGifRole && isGifLink) return; // GIF links allowed
 
     // Domain whitelist
     const urls = message.content.match(/(https?:\/\/[^\s]+)/gi) || [];
@@ -202,9 +171,7 @@ ${config.imageOnlyChannels.length ? config.imageOnlyChannels.map(id => `<#${id}>
           `${message.author}, links are not allowed here.`
         );
         setTimeout(() => warn.delete().catch(() => {}), 3000);
-      } catch (err) {
-        console.error(err);
-      }
+      } catch (err) { console.error(err); }
       return;
     }
   }
@@ -214,16 +181,11 @@ ${config.imageOnlyChannels.length ? config.imageOnlyChannels.map(id => `<#${id}>
   // =========================
   if (config.imageOnlyChannels.includes(message.channel.id)) {
 
-    const hasImageAttachment = message.attachments.some(att =>
-      att.contentType?.startsWith('image/')
-    );
-
+    const hasImageAttachment = message.attachments.some(att => att.contentType?.startsWith('image/'));
     const hasImageLink = /(https?:\/\/.*\.(png|jpg|jpeg|webp))/i.test(message.content);
 
     // GIF links allowed if user has GIF role
-    const hasGifRole = message.member.roles.cache.some(role =>
-      GIF_ROLE_IDS.includes(role.id)
-    );
+    const hasGifRole = message.member.roles.cache.some(role => GIF_ROLE_IDS.includes(role.id));
     const hasGifLink = /(https?:\/\/.*\.gif)/i.test(message.content);
     const gifAllowed = hasGifRole && hasGifLink;
 
@@ -236,9 +198,7 @@ ${config.imageOnlyChannels.length ? config.imageOnlyChannels.map(id => `<#${id}>
           `${message.author}, only images are allowed here.`
         );
         setTimeout(() => warn.delete().catch(() => {}), 3000);
-      } catch (err) {
-        console.error(err);
-      }
+      } catch (err) { console.error(err); }
     }
     return;
   }
@@ -253,9 +213,7 @@ ${config.imageOnlyChannels.length ? config.imageOnlyChannels.map(id => `<#${id}>
         await message.author.send(
           "Your intro was removed because it doesn't follow the template."
         );
-      } catch (err) {
-        console.error(err);
-      }
+      } catch (err) { console.error(err); }
     }
   }
 });
@@ -263,7 +221,7 @@ ${config.imageOnlyChannels.length ? config.imageOnlyChannels.map(id => `<#${id}>
 // =========================
 // READY
 // =========================
-client.once('clientReady', () => {
+client.once('ready', () => {
   console.log(`Logged in as ${client.user.tag}`);
 });
 
