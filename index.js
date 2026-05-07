@@ -141,11 +141,9 @@ ${config.imageOnlyChannels.length ? config.imageOnlyChannels.map(id => `<#${id}>
   }
 
   // =========================
-  // GIF PERMISSION CHECK
+  // GIF BYPASS CALCULATION
   // =========================
-  const hasGifRole = message.member.roles.cache.some(role =>
-    GIF_ROLE_IDS.includes(role.id)
-  );
+  const hasGifRole = message.member.roles.cache.some(role => GIF_ROLE_IDS.includes(role.id));
   const isGifLink = /(https?:\/\/.*\.gif)/i.test(message.content);
   const gifAllowed = hasGifRole && isGifLink;
 
@@ -154,8 +152,7 @@ ${config.imageOnlyChannels.length ? config.imageOnlyChannels.map(id => `<#${id}>
   // =========================
   if (containsLink(message.content)) {
 
-    // GIF bypass anywhere
-    if (gifAllowed) return;
+    if (gifAllowed) return; // GIF-role users can post GIFs anywhere
 
     // Allowed channels
     if (config.allowedLinkChannels.includes(message.channel.id)) return;
@@ -175,9 +172,7 @@ ${config.imageOnlyChannels.length ? config.imageOnlyChannels.map(id => `<#${id}>
 
     if (!allWhitelisted) {
       await message.delete();
-      const warn = await message.channel.send(
-        `${message.author}, links are not allowed here.`
-      );
+      const warn = await message.channel.send(`${message.author}, links are not allowed here.`);
       setTimeout(() => warn.delete().catch(() => {}), 3000);
       return;
     }
@@ -187,17 +182,13 @@ ${config.imageOnlyChannels.length ? config.imageOnlyChannels.map(id => `<#${id}>
   // IMAGE FILTER
   // =========================
   if (config.imageOnlyChannels.includes(message.channel.id)) {
-
     const hasImageAttachment = message.attachments.some(att => att.contentType?.startsWith('image/'));
     const hasImageLink = /(https?:\/\/.*\.(png|jpg|jpeg|webp))/i.test(message.content);
-
     const hasImage = hasImageAttachment || hasImageLink || gifAllowed;
 
     if (!hasImage) {
       await message.delete();
-      const warn = await message.channel.send(
-        `${message.author}, only images are allowed here.`
-      );
+      const warn = await message.channel.send(`${message.author}, only images are allowed here.`);
       setTimeout(() => warn.delete().catch(() => {}), 3000);
       return;
     }
@@ -209,9 +200,7 @@ ${config.imageOnlyChannels.length ? config.imageOnlyChannels.map(id => `<#${id}>
   if (message.channel.id === config.introChannelId) {
     if (!isValidIntro(message.content)) {
       await message.delete();
-      try { await message.author.send(
-        "Your intro was removed because it doesn't follow the template."
-      ); } catch {}
+      try { await message.author.send("Your intro was removed because it doesn't follow the template."); } catch {}
     }
   }
 });
