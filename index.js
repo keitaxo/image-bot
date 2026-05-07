@@ -1,5 +1,10 @@
 require('dotenv').config();
-const { Client, GatewayIntentBits } = require('discord.js');
+
+const {
+  Client,
+  GatewayIntentBits,
+  PermissionsBitField
+} = require('discord.js');
 
 const client = new Client({
   intents: [
@@ -10,30 +15,45 @@ const client = new Client({
 });
 
 // =========================
-// 🖼️ IMAGE-ONLY CHANNELS
+// 🧠 CONFIG
 // =========================
-const IMAGE_ONLY_CHANNELS = [
-  "1498949958701940736",
-  "1496264468273954976"
-];
+
+const config = {
+  imageOnlyChannels: [
+    "1498949958701940736",
+    "1496264468273954976"
+  ],
+
+  allowedLinkChannels: [
+    "1499029471297015989"
+  ],
+
+  allowedLinkRoles: [
+    "1495747720319602799",
+    "1499876762283409408"
+  ],
+
+  whitelistedDomains: [
+    "youtube.com",
+    "youtu.be",
+    "github.com",
+    "discord.gg"
+  ],
+
+  introChannelId: "1496299134574133321"
+};
 
 // =========================
-// 📋 INTRO CHANNEL
+// 🔒 INTRO TEMPLATE
 // =========================
-const INTRO_CHANNEL_ID = "1496299134574133321";
 
-// =========================
-// 🔒 TEMPLATE VALIDATION
-// =========================
 function isValidIntro(content) {
-  // Normalize lines
   const lines = content
     .replace(/\r/g, "")
     .split("\n")
     .map(l => l.trim())
     .filter(l => l.length > 0);
 
-  // Fields in correct order
   const requiredFields = [
     "age",
     "name",
@@ -52,73 +72,313 @@ function isValidIntro(content) {
   for (const line of lines) {
     if (fieldIndex >= requiredFields.length) break;
 
-    // Check if this line contains the next required field
     if (line.toLowerCase().includes(requiredFields[fieldIndex])) {
       fieldIndex++;
     }
   }
 
-  // Only valid if all fields appear in order
   return fieldIndex === requiredFields.length;
 }
 
 // =========================
-// 🎯 MAIN EVENT
+// 🔗 LINK FUNCTIONS
 // =========================
-client.on('messageCreate', async (message) => {
-  if (message.author.bot) return;
 
+function containsLink(content) {
+  return /(https?:\/\/[^\s]+)/gi.test(content);
+}
+
+function getDomain(url) {
+  try {
+    return new URL(url).hostname.replace("www.", "");
+  } catch {
+    return null;
+  }
+}
+
+// =========================
+// 🎯 MESSAGE EVENT
+// =========================
+
+client.on('messageCreate', async (message) => {
+
+  if (message.author.bot) return;
+  if (!message.guild) return;
+
+  // =========================
   // 👑 OWNER BYPASS
-  if (message.guild && message.author.id === message.guild.ownerId) return;
+  // =========================
+
+  if (message.author.id === message.guild.ownerId) return;
+
+  // =========================
+  // ⚙️ COMMANDS
+  // =========================
+
+  if (message.content.startsWith("!")) {
+
+    if (!message.member.permissions.has(PermissionsBitField.Flags.Administrator)) {
+      return;
+    }
+
+    const args = message.content.split(" ");
+    const cmd = args[0].toLowerCase();
+
+    // =========================
+    // ➕ ADD LINK CHANNEL
+    // =========================
+
+    if (cmd === "!addlinkchannel") {
+
+      const channel = message.mentions.channels.first();
+
+      if (!channel) {
+        return message.reply("Mention a channel.");
+      }
+
+      if (!config.allowedLinkChannels.includes(channel.id)) {
+        config.allowedLinkChannels.push(channel.id);
+      }
+
+      return message.reply(`✅ ${channel} can now have links.`);
+    }
+
+    // =========================
+    // ➖ REMOVE LINK CHANNEL
+    // =========================
+
+    if (cmd === "!removelinkchannel") {
+
+      const channel = message.mentions.channels.first();
+
+      if (!channel) {
+        return message.reply("Mention a channel.");
+      }
+
+      config.allowedLinkChannels =
+        config.allowedLinkChannels.filter(id => id !== channel.id);
+
+      return message.reply(`❌ ${channel} can no longer have links.`);
+    }
+
+    // =========================
+    // ➕ ADD LINK ROLE
+    // =========================
+
+    if (cmd === "!addlinkrole") {
+
+      const role = message.mentions.roles.first();
+
+      if (!role) {
+        return message.reply("Mention a role.");
+      }
+
+      if (!config.allowedLinkRoles.includes(role.id)) {
+        config.allowedLinkRoles.push(role.id);
+      }
+
+      return message.reply(`✅ ${role.name} bypasses link filter.`);
+    }
+
+    // =========================
+    // ➖ REMOVE LINK ROLE
+    // =========================
+
+    if (cmd === "!removelinkrole") {
+
+      const role = message.mentions.roles.first();
+
+      if (!role) {
+        return message.reply("Mention a role.");
+      }
+
+      config.allowedLinkRoles =
+        config.allowedLinkRoles.filter(id => id !== role.id);
+
+      return message.reply(`❌ ${role.name} removed from bypass.`);
+    }
+
+    // =========================
+    // ➕ ADD IMAGE CHANNEL
+    // =========================
+
+    if (cmd === "!addimagechannel") {
+
+      const channel = message.mentions.channels.first();
+
+      if (!channel) {
+        return message.reply("Mention a channel.");
+      }
+
+      if (!config.imageOnlyChannels.includes(channel.id)) {
+        config.imageOnlyChannels.push(channel.id);
+      }
+
+      return message.reply(`🖼 ${channel} is now image-only.`);
+    }
+
+    // =========================
+    // ➖ REMOVE IMAGE CHANNEL
+    // =========================
+
+    if (cmd === "!removeimagechannel") {
+
+      const channel = message.mentions.channels.first();
+
+      if (!channel) {
+        return message.reply("Mention a channel.");
+      }
+
+      config.imageOnlyChannels =
+        config.imageOnlyChannels.filter(id => id !== channel.id);
+
+      return message.reply(`❌ ${channel} is no longer image-only.`);
+    }
+
+    // =========================
+    // 📋 SHOW CONFIG
+    // =========================
+
+    if (cmd === "!config") {
+
+      return message.reply(`
+📋 **Current Config**
+
+🔗 Allowed Link Channels:
+${config.allowedLinkChannels.map(id => `<#${id}>`).join("\n") || "None"}
+
+👑 Allowed Link Roles:
+${config.allowedLinkRoles.map(id => `<@&${id}>`).join("\n") || "None"}
+
+🖼 Image Only Channels:
+${config.imageOnlyChannels.map(id => `<#${id}>`).join("\n") || "None"}
+`);
+    }
+  }
+
+  // =========================
+  // 🔗 LINK FILTER
+  // =========================
+
+  if (containsLink(message.content)) {
+
+    // Allowed channels
+    if (config.allowedLinkChannels.includes(message.channel.id)) {
+      return;
+    }
+
+    // Allowed roles
+    const hasAllowedRole = message.member.roles.cache.some(role =>
+      config.allowedLinkRoles.includes(role.id)
+    );
+
+    if (hasAllowedRole) {
+      return;
+    }
+
+    // Domain whitelist
+    const urls = message.content.match(/(https?:\/\/[^\s]+)/gi) || [];
+
+    const allWhitelisted = urls.every(url => {
+      const domain = getDomain(url);
+
+      return config.whitelistedDomains.some(d =>
+        domain?.includes(d)
+      );
+    });
+
+    if (!allWhitelisted) {
+
+      try {
+
+        await message.delete();
+
+        const warn = await message.channel.send(
+          `⚠️ ${message.author}, links are not allowed here.`
+        );
+
+        setTimeout(() => {
+          warn.delete().catch(() => {});
+        }, 3000);
+
+      } catch (err) {
+        console.error(err);
+      }
+
+      return;
+    }
+  }
 
   // =========================
   // 🖼 IMAGE FILTER
   // =========================
-  if (IMAGE_ONLY_CHANNELS.includes(message.channel.id)) {
+
+  if (config.imageOnlyChannels.includes(message.channel.id)) {
+
     const hasImageAttachment = message.attachments.some(att =>
       att.contentType?.startsWith('image/')
     );
 
-    const hasImageLink = /(https?:\/\/.*\.(png|jpg|jpeg|gif|webp))/i.test(message.content);
+    const hasImageLink =
+      /(https?:\/\/.*\.(png|jpg|jpeg|gif|webp))/i.test(message.content);
 
     const hasImage = hasImageAttachment || hasImageLink;
 
     if (!hasImage) {
+
       try {
+
         await message.delete();
+
         const warn = await message.channel.send(
-          `⚠️ ${message.author}, only images are allowed in this channel.`
+          `⚠️ ${message.author}, only images are allowed here.`
         );
-        setTimeout(() => warn.delete().catch(() => {}), 3000);
+
+        setTimeout(() => {
+          warn.delete().catch(() => {});
+        }, 3000);
+
       } catch (err) {
-        console.error('Image delete error:', err);
+        console.error(err);
       }
     }
+
     return;
   }
 
   // =========================
   // 📋 INTRO FILTER
   // =========================
-  if (message.channel.id === INTRO_CHANNEL_ID) {
+
+  if (message.channel.id === config.introChannelId) {
+
     if (!isValidIntro(message.content)) {
+
       try {
+
         await message.delete();
+
         await message.author.send(
-          "Your intro was removed because it doesn't follow the required template."
+          "Your intro was removed because it doesn't follow the template."
         );
+
       } catch (err) {
-        console.error('Intro delete error:', err);
+        console.error(err);
       }
     }
   }
 });
 
 // =========================
-// 🔌 READY EVENT
+// 🔌 READY
 // =========================
+
 client.once('ready', () => {
   console.log(`Logged in as ${client.user.tag}`);
 });
+
+// =========================
+// 🚀 LOGIN
+// =========================
 
 client.login(process.env.TOKEN);
