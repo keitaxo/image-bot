@@ -36,7 +36,6 @@ const config = {
   whitelistedDomains: [
     "youtube.com",
     "youtu.be",
-    "github.com",
     "discord.gg"
   ],
 
